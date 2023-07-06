@@ -14,7 +14,7 @@ import utils
 import config
 
 handler = WebhookHandler(config.CHANNEL_SECRET)
-configuration = Configuration(config.CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(access_token=config.CHANNEL_ACCESS_TOKEN)
 redis_server = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 
 
