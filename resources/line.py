@@ -15,7 +15,9 @@ import config
 
 handler = WebhookHandler(config.CHANNEL_SECRET)
 configuration = Configuration(access_token=config.CHANNEL_ACCESS_TOKEN)
-redis_server = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
+redis_server = redis.Redis(host="localhost", port=6379, decode_responses=True)
+# os.getenv("REDIS_HOST")
+# os.getenv("REDIS_PORT")
 
 
 class Callback(Resource):
@@ -44,16 +46,27 @@ def handle_message(event) -> None:
     user_message = event.message.text
     reply_token = event.reply_token
 
-    # utils.push_reply_token(user_id, reply_message)
+    utils.push_reply_token(user_id, reply_token, init_time, redis_server)
+    utils.log_msg(reply_token, user_message, redis_server)
 
     with ApiClient(configuration) as api_client:
-        reply_message = message_event.handle_message(user_id=user_id, user_message=user_message)
-
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message_with_http_info(
-            ReplyMessageRequest(
-                reply_token=reply_token,
-                messages=[TextMessage(text=f"{reply_message}\n{init_time}, {time.strftime('%X')}")],
-            ),
+        reply_message = message_event.handle_message(
+            user_id=user_id,
+            reply_token=reply_token,
+            user_message=user_message,
+            redis_server=redis_server,
         )
-        utils.keep_latest_100_dialogue(user_id, user_message, reply_message, redis_server)
+        utils.update_reply_message(reply_token, reply_message, redis_server)
+        utils.update_state(reply_token, redis_server)
+        print("迴圈")
+        while utils.check_state(user_id, reply_token, redis_server):
+            reply_message, init_time = utils.get_reply_info(reply_token, redis_server)
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=f"{reply_message}\n{init_time}, {time.strftime('%X')}")],
+                ),
+            )
+            reply_token = utils.get_next_reply_token(user_id, redis_server)
+            

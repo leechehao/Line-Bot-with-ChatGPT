@@ -13,6 +13,6 @@ api.add_resource(Callback, "/callback")
 
 
 if __name__ == "__main__":
-    host = os.getenv("HOST")
-    port = int(os.getenv("PORT"))
+    host = "0.0.0.0"  # os.getenv("HOST")
+    port = 7788  # int(os.getenv("PORT"))
     app.run(host=host, port=port, debug=True)

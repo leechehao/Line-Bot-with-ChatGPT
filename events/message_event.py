@@ -1,3 +1,5 @@
+import redis
+
 import utils
 
 ANSWER = "ANSWER"
@@ -7,7 +9,12 @@ ASK = "ASK"
 TOP_N_DOC = "TOP_N_DOC"
 
 
-def handle_message(user_id: str, user_message: str) -> str:
+def handle_message(
+    user_id: str,
+    reply_token: str,
+    user_message: str,
+    redis_server: redis.client.Redis,
+) -> str:
     # ===== Ken 歷史對話 =====
     match_output = utils.match_history_dialogue(user_message)
     if ANSWER in match_output:
@@ -18,11 +25,13 @@ def handle_message(user_id: str, user_message: str) -> str:
         response = utils.detect_intent(user_message)
         if response[STATE] == ASK:
             # ===== Lulu 資訊檢索 =====
-            response = utils.search_relative_docs(user_message)
+            response = utils.search_relative_docs(user_id, user_message, redis_server)
             if TOP_N_DOC in response:
+                utils.log_docs(reply_token, response, redis_server)
                 # ===== Clay 生成回覆 =====
-                response = utils.get_chatgpt_response(user_message, user_id, response)
+                response = utils.get_chatgpt_response(user_id, reply_token, user_message, response)
+
         # ===== Ken 後處理 =====
-        reply_message = utils.postprocess_response(user_message, his_dlg_id, response)
+        reply_message = utils.postprocess_response(his_dlg_id, user_message, response)
 
     return reply_message
