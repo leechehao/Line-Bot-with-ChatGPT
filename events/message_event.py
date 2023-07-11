@@ -1,6 +1,5 @@
-import redis
-
 import utils
+
 
 ANSWER = "ANSWER"
 HIS_DLG_ID = "HIS_DLG_ID"
@@ -13,7 +12,6 @@ def handle_message(
     user_id: str,
     reply_token: str,
     user_message: str,
-    redis_server: redis.client.Redis,
 ) -> str:
     # ===== Ken 歷史對話 =====
     match_output = utils.match_history_dialogue(user_message)
@@ -25,9 +23,9 @@ def handle_message(
         response = utils.detect_intent(user_message)
         if response[STATE] == ASK:
             # ===== Lulu 資訊檢索 =====
-            response = utils.search_relative_docs(user_id, user_message, redis_server)
+            response = utils.search_relative_docs(user_message)
             if TOP_N_DOC in response:
-                utils.log_docs(reply_token, response, redis_server)
+                utils.log_docs(reply_token, response)
                 # ===== Clay 生成回覆 =====
                 response = utils.get_chatgpt_response(user_id, reply_token, user_message, response)
 
