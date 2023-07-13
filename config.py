@@ -2,6 +2,6 @@ CHANNEL_ACCESS_TOKEN = "JhLmIQIGRaDe9zn2/ZS59jYOeGv2TkY6XMNe6ztCCmrC8ctRdul2FXjg
 CHANNEL_SECRET = "ba6693e506c88fce6b6c34b6e2b4ef3a"
 HISTORY_DIALOGUE_URL = "http://192.168.1.76:54321"
 DETECT_INTENT_URL = "http://192.168.1.76:29999/intent_detection"
-INFORMATION_RETRIEVAL_URL = "http://192.168.1.76:16888/doc-search-sys/pgvector-local/ivfflat20-2"
+INFORMATION_RETRIEVAL_URL = "http://192.168.1.76:15888/doc-search-sys/pgvector-local/ivfflat20-2"
 CHATGPT_RESPONSE_URL = "http://192.168.1.76:29999/get_chatgpt_response"
 POSTPROCESS_URL = "http://192.168.1.76:54322"

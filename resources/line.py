@@ -34,7 +34,7 @@ class Callback(Resource):
         try:
             handler.handle(body, signature)
         except InvalidSignatureError:
-            # current_app.logger.info("Invalid signature. Please check your channel access token/channel secret.")
+            current_app.logger.info("Invalid signature. Please check your channel access token/channel secret.")
             abort(400)
 
         return "OK"
@@ -47,14 +47,21 @@ def handle_message(event) -> None:
     reply_token = event.reply_token
     user_message = event.message.text
 
+    current_app.logger.info(f"[事件觸發] {user_id} | {reply_token} | {user_message}")
+
     utils.push_event(user_id, reply_token, user_message, start_time)
 
     with ApiClient(configuration) as api_client:
-        reply_message = message_event.handle_message(
-            user_id=user_id,
-            reply_token=reply_token,
-            user_message=user_message,
-        )
+        try:
+            reply_message = message_event.handle_message(
+                user_id=user_id,
+                reply_token=reply_token,
+                user_message=user_message,
+            )
+        except Exception as e:
+            current_app.logger.error(f"{type(e)}: {e}", exc_info=True)
+            reply_message = "不好意思，系統暫時性錯誤。"
+
         utils.update_event(reply_token, REPLY_MSG=reply_message, STATE="True")
 
         while utils.check_state(user_id, reply_token):

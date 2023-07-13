@@ -1,9 +1,10 @@
-from typing import Tuple
+from typing import List, Optional, Tuple
 import os
 import json
 
 import redis
 import requests
+from flask import current_app
 
 import config
 
@@ -22,6 +23,8 @@ START_TIME = "START_TIME"
 STATE = "STATE"
 REPLY_MSG = "REPLY_MSG"
 DOCUMENTS = "DOCUMENTS"
+TOP_N_DOC = "TOP_N_DOC"
+TOP_N_DOC_ID = "TOP_N_DOC_ID"
 
 
 def push_event(
@@ -40,10 +43,6 @@ def push_event(
             STATE: "False",
         },
     )
-
-
-def log_docs(reply_token: str, response: dict) -> None:
-    redis_server.hset(f"reply_token:{reply_token}", DOCUMENTS, json.dumps(response, ensure_ascii=False))
 
 
 def update_event(reply_token: str, **kwargs) -> None:
@@ -71,50 +70,158 @@ def get_next_reply_token(user_id: str) -> str:
     return redis_server.lindex(f"user:{user_id}:reply_tokens", 0)
 
 
-def match_history_dialogue(user_message: str) -> dict:
-    print("歷史對話", user_message)
-    return requests.post(config.HISTORY_DIALOGUE_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+def match_history_dialogue(user_id: str, reply_token: str, user_message: str) -> dict:
+    """歷史對話中使用者訊息的向量相似度搜尋。
+
+    Args:
+        user_id (str): 使用者 LINE ID。
+
+        reply_token (str): 用於向此事件發送回覆訊息。只能使用一次且必須在收到 Webhook 後一分鐘內使用。使用超過一分鐘並不能保證有效。
+
+        user_message (str): 使用者訊息。
+
+    Returns:
+        dict: 有兩種可能的輸出:
+            (1) 輸出 -> LINE:
+                    `ANSWER` (str): 回覆訊息(歷史對話的回覆訊息)。
+                    
+                    `HIS_DLG_ID` (str): 歷史對話 ID。
+                    
+                    `DISTANCE` (float): 使用者訊息之向量與歷史對話中問題之向量最相似的距離。
+            (2) 輸出 -> 意圖識別:
+                    `HIS_DLG_ID` (Optional[str]): 歷史對話 ID。
+                    
+                    `DISTANCE` (float): 使用者訊息之向量與歷史對話中問題之向量最相似的距離。(如果 `HIS_DLG_ID` 為 None 則不會有此鍵)
+    """
+    response = requests.post(config.HISTORY_DIALOGUE_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+    current_app.logger.info(f"[歷史對話] {user_id} | {reply_token} | {response}")
+    return response
 
 
-def detect_intent(user_message: str) -> dict:
-    print("意圖識別", user_message)
-    return requests.post(config.DETECT_INTENT_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+def detect_intent(user_id: str, reply_token: str, user_message: str) -> dict:
+    """識別使用者意圖。
+
+    Args:
+        user_id (str): 使用者 LINE ID。
+
+        reply_token (str): 用於向此事件發送回覆訊息。只能使用一次且必須在收到 Webhook 後一分鐘內使用。使用超過一分鐘並不能保證有效。
+
+        user_message (str): 使用者訊息。
+
+    Returns:
+        dict: 有兩種可能的輸出:
+            (1) 輸出 -> 資訊檢索:
+                    `STATE` (str): 意圖的種類，此值為 `ASK`。
+            (2) 輸出 -> 後處理:
+                    `ANSWER` (None)
+
+                    `STATE` (str): 意圖的種類，此值為 `HATE`/`CHAT`。
+                    
+                    `OTHERS` (None)
+    """
+    response = requests.post(config.DETECT_INTENT_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+    current_app.logger.info(f"[意圖識別] {user_id} | {reply_token} | {response}")
+    return response
 
 
-def search_relative_docs(user_message: str) -> dict:
-    print("資訊檢索", user_message)
-    return requests.post(config.INFORMATION_RETRIEVAL_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+def search_relative_docs(user_id: str, reply_token: str, user_message: str) -> dict:
+    """搜尋相關文件。
+
+    Args:
+        user_id (str): 使用者 LINE ID。
+
+        reply_token (str): 用於向此事件發送回覆訊息。只能使用一次且必須在收到 Webhook 後一分鐘內使用。使用超過一分鐘並不能保證有效。
+        
+        user_message (str): 使用者訊息。
+
+    Returns:
+        dict: 有兩種可能的輸出:
+            (1) 輸出 -> 生成回覆:
+                    `TOP_N_DOC` (dict): 相關文件。
+
+                    `TOP_N_DOC_ID` (List[dict]): 相關文件 ID。
+            (2) 輸出 -> 後處理:
+                    `ANSWER`(None)
+
+                    `STATE` (str): 此值為 `INFO_NOT_FOUND`，表示查無相關文件。
+
+                    `OTHERS`(None)
+    """
+    response = requests.post(
+        config.INFORMATION_RETRIEVAL_URL,
+        json={USER_MSG: user_message, "RETURN_LOG": True},
+        headers=HEADERS,
+    ).json()
+    log_info = response[TOP_N_DOC_ID] if TOP_N_DOC_ID in response else response
+    current_app.logger.info(f"[資訊檢索] {user_id} | {reply_token} | {log_info}")
+    return response
 
 
 def get_chatgpt_response(
     user_id: str,
     reply_token: str,
     user_message: str,
-    relative_docs: dict,
+    relative_docs: List[dict],
 ) -> dict:
-    print("生成回覆", user_message)
-    relative_docs[LINE_USER_ID] = user_id
-    relative_docs[REPLY_TOKEN] = reply_token
-    relative_docs[USER_MSG] = user_message
-    return requests.post(config.CHATGPT_RESPONSE_URL, json=relative_docs, headers=HEADERS).json()
+    """ChatGPT 生成回覆訊息。
+
+    Args:
+        user_id (str): 使用者 LINE ID。
+
+        reply_token (str): 用於向此事件發送回覆訊息。只能使用一次且必須在收到 Webhook 後一分鐘內使用。使用超過一分鐘並不能保證有效。
+
+        user_message (str): 使用者訊息。
+
+        relative_docs (List[dict]): 資訊檢索系統搜尋的相關文件。
+
+    Returns:
+        dict:
+            `ANSWER` (Optional[str]): ChatGPT 產生的回答，如果 `STATE` 是 `ERR` 則為 None。
+
+            `STATE` (str): 回答的種類，包含 `ANS`/`ASK`/`ERR`。
+
+            `OTHERS` (Optional[dict]): 語意評分資訊，如果 `STATE` 是 `ASK` 則會有 `REPHRASE` 的鍵；如果 `STATE` 是 `ERR` 則為 None。
+    """
+    response = requests.post(
+        config.CHATGPT_RESPONSE_URL,
+        json={
+            LINE_USER_ID: user_id,
+            REPLY_TOKEN: reply_token,
+            USER_MSG: user_message,
+            TOP_N_DOC: relative_docs,
+        },
+        headers=HEADERS,
+    ).json()
+    current_app.logger.info(f"[生成回覆] {user_id} | {reply_token} | {response}")
+    return response
 
 
 def postprocess_response(
-    his_dlg_id: str,
+    user_id: str,
+    reply_token: str,
     user_message: str,
-    input_data: dict
+    input_data: dict,
+    his_dlg_id: Optional[str],
 ) -> str:
-    """後處理回覆訊息
+    """後處理回覆訊息。
 
     Args:
         user_message (str): 使用者訊息。
-        his_dlg_id (str): 歷史對話 ID。
-        input_data (dict): 有三個 key (`ANSWER`，`STATE`，`OTHERS`)。
+        
+        input_data (dict):
+            `ANSWER` (Optional[str]): 回覆訊息。
 
+            `STATE` (str): 回覆訊息的種類，包含 `ANS`/`ASK`/`ERR`/`HATE`/`CHAT`/`INFO_NOT_FOUND`。
+            
+            `OTHERS` (Optional[dict]): 語意評分資訊，`STATE` 是 `ANS`/`ASK` 則不為 None。
+
+        his_dlg_id (Optional[str]): 歷史對話 ID。
+        
     Returns:
-        str: 已後處理的回覆訊息
+        str: 已後處理的回覆訊息。
     """
-    print("後處理", user_message)
-    input_data[HIS_DLG_ID] = his_dlg_id
     input_data[USER_MSG] = user_message
-    return requests.post(config.POSTPROCESS_URL, json=input_data, headers=HEADERS).json()[ANSWER]
+    input_data[HIS_DLG_ID] = his_dlg_id
+    response = requests.post(config.POSTPROCESS_URL, json=input_data, headers=HEADERS).json()
+    current_app.logger.info(f"[已後處理] {user_id} | {reply_token} |")
+    return response[ANSWER]
