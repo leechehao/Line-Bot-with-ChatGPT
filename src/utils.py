@@ -1,6 +1,5 @@
 from typing import List, Optional, Tuple
 import os
-import json
 
 import redis
 import requests
@@ -8,9 +7,8 @@ from flask import current_app
 
 import config
 
-redis_server = redis.Redis(host="localhost", port=6379, decode_responses=True)
-# os.getenv("REDIS_HOST")
-# os.getenv("REDIS_PORT")
+redis_server = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
+
 
 HEADERS = {"Content-Type": "application/json"}
 LINE_USER_ID = "LINE_USER_ID"
@@ -84,13 +82,13 @@ def match_history_dialogue(user_id: str, reply_token: str, user_message: str) ->
         dict: 有兩種可能的輸出:
             (1) 輸出 -> LINE:
                     `ANSWER` (str): 回覆訊息(歷史對話的回覆訊息)。
-                    
+
                     `HIS_DLG_ID` (str): 歷史對話 ID。
-                    
+
                     `DISTANCE` (float): 使用者訊息之向量與歷史對話中問題之向量最相似的距離。
             (2) 輸出 -> 意圖識別:
                     `HIS_DLG_ID` (Optional[str]): 歷史對話 ID。
-                    
+
                     `DISTANCE` (float): 使用者訊息之向量與歷史對話中問題之向量最相似的距離。(如果 `HIS_DLG_ID` 為 None 則不會有此鍵)
     """
     response = requests.post(config.HISTORY_DIALOGUE_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
@@ -116,7 +114,7 @@ def detect_intent(user_id: str, reply_token: str, user_message: str) -> dict:
                     `ANSWER` (None)
 
                     `STATE` (str): 意圖的種類，此值為 `HATE`/`CHAT`。
-                    
+
                     `OTHERS` (None)
     """
     response = requests.post(config.DETECT_INTENT_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
@@ -131,7 +129,7 @@ def search_relative_docs(user_id: str, reply_token: str, user_message: str) -> d
         user_id (str): 使用者 LINE ID。
 
         reply_token (str): 用於向此事件發送回覆訊息。只能使用一次且必須在收到 Webhook 後一分鐘內使用。使用超過一分鐘並不能保證有效。
-        
+
         user_message (str): 使用者訊息。
 
     Returns:
@@ -207,16 +205,16 @@ def postprocess_response(
 
     Args:
         user_message (str): 使用者訊息。
-        
+
         input_data (dict):
             `ANSWER` (Optional[str]): 回覆訊息。
 
             `STATE` (str): 回覆訊息的種類，包含 `ANS`/`ASK`/`ERR`/`HATE`/`CHAT`/`INFO_NOT_FOUND`。
-            
+
             `OTHERS` (Optional[dict]): 語意評分資訊，`STATE` 是 `ANS`/`ASK` 則不為 None。
 
         his_dlg_id (Optional[str]): 歷史對話 ID。
-        
+
     Returns:
         str: 已後處理的回覆訊息。
     """

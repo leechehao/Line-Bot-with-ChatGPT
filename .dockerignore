@@ -1,0 +1,6 @@
+__pycache__
+redis-data
+logs
+.venv
+Dockerfile
+.gitignore

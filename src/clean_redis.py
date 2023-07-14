@@ -1,7 +1,9 @@
+import os
 import re
+
 import redis
 
-redis_server = redis.Redis(host="localhost", port=6379, decode_responses=True)
+redis_server = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 
 
 reserve_reply_tokens = []

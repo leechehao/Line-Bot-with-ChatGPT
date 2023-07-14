@@ -1,0 +1,24 @@
+services:
+  redis-stack-server:
+    image: docker.io/redis/redis-stack-server:latest
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis-data:/data
+    environment:
+      REDIS_ARGS: "--save 10 1"
+
+  line-webhook:
+    image: line-webhook:latest
+    ports:
+      - 7788:7788
+    volumes:
+      - ./logs:/home/myuser/src/logs
+    user: "root:root"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 7788
+      REDIS_HOST: redis-stack-server
+      REDIS_PORT: 6379
+    depends_on:
+      - redis-stack-server
