@@ -1,7 +1,12 @@
+import os
+
+
 CHANNEL_ACCESS_TOKEN = "JhLmIQIGRaDe9zn2/ZS59jYOeGv2TkY6XMNe6ztCCmrC8ctRdul2FXjg742pevljKDKPV42sL1F3Ojk7LcQfyDFgGZ0OtfTVPc/xjOjLS2atWEsJtCB7NiSzlBKtLb2JrPtnONIFxyCBXEJcb/286gdB04t89/1O/w1cDnyilFU="
 CHANNEL_SECRET = "ba6693e506c88fce6b6c34b6e2b4ef3a"
-HISTORY_DIALOGUE_URL = "http://192.168.1.76:54321"
-DETECT_INTENT_URL = "http://192.168.1.76:29999/intent_detection"
-INFORMATION_RETRIEVAL_URL = "http://192.168.1.76:15888/doc-search-sys/pgvector-local/ivfflat20-2"
-CHATGPT_RESPONSE_URL = "http://192.168.1.76:29999/get_chatgpt_response"
-POSTPROCESS_URL = "http://192.168.1.76:54322"
+SERVER_HOST = "192.168.1.76"
+
+HISTORY_DIALOGUE_URL = f"http://{SERVER_HOST}:{os.getenv('HISTORY_DIALOGUE_PORT')}"
+DETECT_INTENT_URL = f"http://{SERVER_HOST}:{os.getenv('DETECT_INTENT_PORT')}/intent_detection"
+INFORMATION_RETRIEVAL_URL = f"http://{SERVER_HOST}:{os.getenv('INFORMATION_RETRIEVAL_PORT')}/doc-search-sys/health-insurance/search"
+CHATGPT_RESPONSE_URL = f"http://{SERVER_HOST}:{os.getenv('CHATGPT_RESPONSE_PORT')}/get_chatgpt_response"
+POSTPROCESS_URL = f"http://{SERVER_HOST}:{os.getenv('POSTPROCESS_PORT')}"

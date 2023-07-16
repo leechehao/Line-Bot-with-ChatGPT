@@ -18,7 +18,14 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 7788
+      WORKERS: 1
+      THREADS: 8
       REDIS_HOST: redis-stack-server
       REDIS_PORT: 6379
+      HISTORY_DIALOGUE_PORT: 54321
+      DETECT_INTENT_PORT: 22999
+      INFORMATION_RETRIEVAL_PORT: 18888
+      CHATGPT_RESPONSE_PORT: 29999
+      POSTPROCESS_PORT: 54322
     depends_on:
       - redis-stack-server

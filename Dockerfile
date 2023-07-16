@@ -14,8 +14,8 @@ COPY src /home/myuser/src
 
 WORKDIR /home/myuser/src
 
-RUN rm -rf /tmp/env
+RUN rm -rf /tmp/env && chmod +x run.sh
 
 USER myuser
 
-CMD ["sh", "-c", "gunicorn app:app -b ${HOST:-0.0.0.0}:${PORT:-7788}"]
+ENTRYPOINT ["./run.sh"]

@@ -222,4 +222,4 @@ def postprocess_response(
     input_data[HIS_DLG_ID] = his_dlg_id
     response = requests.post(config.POSTPROCESS_URL, json=input_data, headers=HEADERS).json()
     current_app.logger.info(f"[已後處理] {user_id} | {reply_token} |")
-    return response[ANSWER]
+    return response
