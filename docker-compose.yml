@@ -5,8 +5,7 @@ services:
       - 6379:6379
     volumes:
       - ./redis-data:/data
-    environment:
-      REDIS_ARGS: "--save 10 1"
+      - ./redis-data/redis.conf:/redis-stack.conf
 
   line-webhook:
     image: line-webhook:latest
@@ -14,6 +13,7 @@ services:
       - 7788:7788
     volumes:
       - ./logs:/home/myuser/src/logs
+      - ./src/secret.py:/home/myuser/src/secret.py
     user: "root:root"
     environment:
       HOST: 0.0.0.0

@@ -6,8 +6,16 @@ import requests
 from flask import current_app
 
 import config
+import secret
 
-redis_server = redis.Redis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
+
+redis_server = redis.Redis(
+    host=os.getenv("REDIS_HOST"),
+    port=os.getenv("REDIS_PORT"),
+    username=secret.REDIS_ADMIN,
+    password=secret.REDIS_ADMIN_PASSWORD,
+    decode_responses=True,
+)
 
 
 HEADERS = {"Content-Type": "application/json"}
