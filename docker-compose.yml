@@ -2,30 +2,35 @@ services:
   redis-stack-server:
     image: docker.io/redis/redis-stack-server:latest
     ports:
-      - 6379:6379
+      - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - ./redis-data:/data
-      - ./redis-data/redis.conf:/redis-stack.conf
+      - ./redis.conf:/redis-stack.conf
 
   line-webhook:
     image: line-webhook:latest
     ports:
-      - 7788:7788
+      - "${WEBHOOK_PORT}:${WEBHOOK_PORT}"
     volumes:
       - ./logs:/home/myuser/src/logs
-      - ./src/secret.py:/home/myuser/src/secret.py
+      - ./redis-data/tls:/home/myuser/src/tls
     user: "root:root"
     environment:
-      HOST: 0.0.0.0
-      PORT: 7788
-      WORKERS: 1
-      THREADS: 8
+      WEBHOOK_HOST: ${WEBHOOK_HOST}
+      WEBHOOK_PORT: ${WEBHOOK_PORT}
+      WEBHOOK_WORKERS: ${WEBHOOK_WORKERS}
+      WEBHOOK_THREADS: ${WEBHOOK_THREADS}
+      CHANNEL_ACCESS_TOKEN: ${CHANNEL_ACCESS_TOKEN}
+      CHANNEL_SECRET: ${CHANNEL_SECRET}
       REDIS_HOST: redis-stack-server
-      REDIS_PORT: 6379
-      HISTORY_DIALOGUE_PORT: 54321
-      DETECT_INTENT_PORT: 22999
-      INFORMATION_RETRIEVAL_PORT: 18888
-      CHATGPT_RESPONSE_PORT: 29999
-      POSTPROCESS_PORT: 54322
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_ADMIN: ${REDIS_ADMIN}
+      REDIS_ADMIN_PASSWORD: ${REDIS_ADMIN_PASSWORD}
+      SERVER_HOST: ${SERVER_HOST}
+      HISTORY_DIALOGUE_PORT: ${HISTORY_DIALOGUE_PORT}
+      DETECT_INTENT_PORT: ${DETECT_INTENT_PORT}
+      INFORMATION_RETRIEVAL_PORT: ${INFORMATION_RETRIEVAL_PORT}
+      CHATGPT_RESPONSE_PORT: ${CHATGPT_RESPONSE_PORT}
+      POSTPROCESS_PORT: ${POSTPROCESS_PORT}
     depends_on:
       - redis-stack-server

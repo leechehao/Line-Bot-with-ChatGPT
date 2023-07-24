@@ -1,3 +1,4 @@
+import os
 import time
 
 from flask import request, abort, current_app
@@ -7,13 +8,12 @@ from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, TextMessage
 
-import secret
 import utils
 from events import message_event
 
 
-handler = WebhookHandler(secret.CHANNEL_SECRET)
-configuration = Configuration(access_token=secret.CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(os.getenv("CHANNEL_SECRET"))
+configuration = Configuration(access_token=os.getenv("CHANNEL_ACCESS_TOKEN"))
 
 REPLY_MSG = "REPLY_MSG"
 STATE = "STATE"

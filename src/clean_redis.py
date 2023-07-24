@@ -3,14 +3,16 @@ import re
 
 import redis
 
-import secret
-
 
 redis_server = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=os.getenv("REDIS_PORT"),
-    username=secret.REDIS_ADMIN,
-    password=secret.REDIS_ADMIN_PASSWORD,
+    username=os.getenv("REDIS_ADMIN"),
+    password=os.getenv("REDIS_ADMIN_PASSWORD"),
+    ssl=True,
+    ssl_certfile="/home/myuser/src/tls/client.crt",
+    ssl_keyfile="/home/myuser/src/tls/client.key",
+    ssl_ca_certs="/home/myuser/src/tls/ca.crt",
     decode_responses=True,
 )
 
