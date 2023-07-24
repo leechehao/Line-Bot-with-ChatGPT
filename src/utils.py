@@ -187,9 +187,9 @@ def get_chatgpt_response(
         dict:
             `ANSWER` (Optional[str]): ChatGPT 產生的回答，如果 `STATE` 是 `ERR` 則為 None。
 
-            `STATE` (str): 回答的種類，包含 `ANS`/`ASK`/`ERR`。
+            `STATE` (str): 回答的種類，包含 `ANS`/`ERR`/`UNANSWERABLE`/`POOR`/`ASK`(目前關閉)。
 
-            `OTHERS` (Optional[dict]): 語意評分資訊，如果 `STATE` 是 `ASK` 則會有 `REPHRASE` 的鍵；如果 `STATE` 是 `ERR` 則為 None。
+            `OTHERS` (Optional[dict]): 語意評分資訊，如果 `STATE` 是 `ERR` 則為 None ；如果 `STATE` 是 `ASK` 則會有 `REPHRASE` 的鍵(目前關閉)。
     """
     response = requests.post(
         config.CHATGPT_RESPONSE_URL,
