@@ -6,9 +6,12 @@ WORKDIR /tmp/env
 
 COPY build build
 
+ENV TZ=Asia/Taipei
+
 RUN pip install -r build/requirements.txt \
     && groupadd -g 1003 myuser \
-    && useradd -m -l -u 1003 -g myuser myuser 
+    && useradd -m -l -u 1003 -g myuser myuser \
+    && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime
 
 COPY src /home/myuser/src
 

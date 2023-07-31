@@ -32,5 +32,6 @@ services:
       INFORMATION_RETRIEVAL_PORT: ${INFORMATION_RETRIEVAL_PORT}
       CHATGPT_RESPONSE_PORT: ${CHATGPT_RESPONSE_PORT}
       POSTPROCESS_PORT: ${POSTPROCESS_PORT}
+      TZ: ${TZ}
     depends_on:
       - redis-stack-server
