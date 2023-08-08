@@ -102,7 +102,7 @@ def match_history_dialogue(user_id: str, reply_token: str, user_message: str) ->
 
                     `DISTANCE` (float): 使用者訊息之向量與歷史對話中問題之向量最相似的距離。(如果 `HIS_DLG_ID` 為 None 則不會有此鍵)
     """
-    response = requests.post(config.HISTORY_DIALOGUE_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+    response = requests.post(config.HISTORY_DIALOGUE_URL, json={USER_MSG: user_message}, headers=HEADERS, timeout=5).json()
     current_app.logger.info(f"[歷史對話] {user_id} | {reply_token} | {response}")
     return response
 
@@ -128,7 +128,7 @@ def detect_intent(user_id: str, reply_token: str, user_message: str) -> dict:
 
                     `OTHERS` (None)
     """
-    response = requests.post(config.DETECT_INTENT_URL, json={USER_MSG: user_message}, headers=HEADERS).json()
+    response = requests.post(config.DETECT_INTENT_URL, json={USER_MSG: user_message}, headers=HEADERS, timeout=5).json()
     current_app.logger.info(f"[意圖識別] {user_id} | {reply_token} | {response}")
     return response
 
@@ -160,6 +160,7 @@ def search_relative_docs(user_id: str, reply_token: str, user_message: str) -> d
         config.INFORMATION_RETRIEVAL_URL,
         json={USER_MSG: user_message, "RETURN_LOG": True},
         headers=HEADERS,
+        timeout=5,
     ).json()
     log_info = response[TOP_N_DOC_ID] if TOP_N_DOC_ID in response else response
     current_app.logger.info(f"[資訊檢索] {user_id} | {reply_token} | {log_info}")
@@ -200,6 +201,7 @@ def get_chatgpt_response(
             TOP_N_DOC: relative_docs,
         },
         headers=HEADERS,
+        timeout=40,
     ).json()
     current_app.logger.info(f"[生成回覆] {user_id} | {reply_token} | {response}")
     return response
@@ -231,6 +233,6 @@ def postprocess_response(
     """
     input_data[USER_MSG] = user_message
     input_data[HIS_DLG_ID] = his_dlg_id
-    response = requests.post(config.POSTPROCESS_URL, json=input_data, headers=HEADERS).json()
+    response = requests.post(config.POSTPROCESS_URL, json=input_data, headers=HEADERS, timeout=5).json()
     current_app.logger.info(f"[已後處理] {user_id} | {reply_token} |")
     return response
