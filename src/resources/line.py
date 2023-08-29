@@ -18,6 +18,20 @@ configuration = Configuration(access_token=os.getenv("CHANNEL_ACCESS_TOKEN"))
 REPLY_MSG = "REPLY_MSG"
 STATE = "STATE"
 END_TIME = "END_TIME"
+TOPIC_NAME = {
+    -1: "未符合任何主題",  # Clay
+    0: "健保署有無提供服務電話供民眾查詢健保費等相關問題？",  # Clay
+    1: "各類保險對象保險費的負擔比率為何？",  # Ken
+    2: "全民健康保險的投保金額與勞保的投保薪資須要一致嗎？",  # Lulu
+    3: "員工眷屬人數太多，是否會增加雇主保費負擔？",  # Lulu
+    4: "每個月的全民健保繳款單於何時寄出？",  # Bryant
+    5: "保險費應如何繳交？",  # Bryant
+    6: "被保險人不按期繳納保險費，權益會受到什麼影響？",  # Clay
+    7: "那些人的自付保險費可獲得補助？受補助者應如何辦理手續？",  # Clay
+    8: "僑生、外籍生應繳納多少保險費，如何繳納？",  # Clay
+    9: "無力繳納健保費者，有那些協助措施？",  # Ken
+    10: "曾有民眾收到以「全民健康保健中心」名義，寄發「健保滯納金催繳通知單」",  # Ken
+}
 
 
 class Callback(Resource):
@@ -52,7 +66,7 @@ def handle_message(event) -> None:
 
     with ApiClient(configuration) as api_client:
         try:
-            reply_message = message_event.handle_message(
+            reply_message, topic_class = message_event.handle_message(
                 user_id=user_id,
                 reply_token=reply_token,
                 user_message=user_message,
@@ -69,7 +83,8 @@ def handle_message(event) -> None:
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=reply_token,
-                    messages=[TextMessage(text=f"{reply_message}\n{start_time}, {time.strftime('%X')}")],
+                    messages=[TextMessage(
+                        text=f"{reply_message}\n問題分類：{topic_class} -> {TOPIC_NAME.get(topic_class, '未觸發')}\n{start_time}, {time.strftime('%X')}")],
                 ),
             )
             utils.update_event(reply_token, END_TIME=time.strftime('%X'))
