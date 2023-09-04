@@ -74,6 +74,7 @@ def handle_message(event) -> None:
         except Exception as e:
             current_app.logger.error(f"{type(e)}: {e}", exc_info=True)
             reply_message = "系統忙碌中，請您稍後再試試看。"
+            topic_class = None
 
         utils.update_event(reply_token, REPLY_MSG=reply_message, STATE="True")
 
